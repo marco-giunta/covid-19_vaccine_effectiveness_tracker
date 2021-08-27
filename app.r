@@ -6,7 +6,7 @@ library('plotly')
 library('maps')
 library('coda')
 
-setwd('D:\\Advanced Statistics for Physics Analysis lecture material\\esame\\webapp\\source\\mio2')
+# setwd('D:\\Advanced Statistics for Physics Analysis lecture material\\esame\\webapp\\source\\mio2')
 
 if (!file.exists('./mcmc_data/mcmc_data.RData')) {
     source('mcmc_data_generator.r')
@@ -40,9 +40,9 @@ print(paste('most recent date in the dataset:', MAX_DATE))
 print(paste('today is', lubridate::today()))
 
 plot_vaccinations_stats <- function(data, loc, col, dates) {
-    tmp <- data |> drop_na() |> filter(location %in% loc) |> filter(date > dates[1] & date < dates[2])# |> select(col)
+    tmp <- data |> select(-c('total_boosters', 'total_boosters_per_hundred')) |> drop_na() |> filter(location %in% loc) |> filter(date > dates[1] & date < dates[2])# |> select(col)
     g <- ggplot(tmp, aes_string(x = 'date', y = col, color = 'location')) + geom_line() + geom_point() + xlab('date') + ylab(str_replace(col, '_', ' '))
-    g
+    g # di recente hanno aggiunto due colonne che ad es. per l'Italia contengono sempre na, quindi o le rimosso o il drop_na restituirà dataframes vuoti
 }
 
 plot_world_map <- function(world_data) {
