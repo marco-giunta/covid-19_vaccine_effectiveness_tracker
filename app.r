@@ -7,6 +7,7 @@ library('maps')
 library('coda')
 
 # setwd('D:\\Advanced Statistics for Physics Analysis lecture material\\esame\\webapp\\source\\mio2')
+setwd("C:/Users/ma_gi/Documents/GitHub/covid-19_vaccine_effectiveness_tracker")
 
 if (!file.exists('./mcmc_data/mcmc_data.RData')) {
     source('mcmc_data_generator.r')
@@ -32,6 +33,7 @@ if (UPDATE_DATA) {
 df <- read.csv('vaccinations.csv')
 
 df$date <- as.Date(df$date, '%Y-%m-%d') # non fondamentale con ggplot ma silenzia un warning e va più veloce
+# df$date %<>% as.Date('%Y-%m-%d') # ci starebbe ma Hadley non vuole
 
 MIN_DATE <- min(df$date)
 MAX_DATE <- max(df$date)
@@ -40,9 +42,18 @@ print(paste('most recent date in the dataset:', MAX_DATE))
 print(paste('today is', lubridate::today()))
 
 plot_vaccinations_stats <- function(data, loc, col, dates) {
-    tmp <- data |> select(-c('total_boosters', 'total_boosters_per_hundred')) |> drop_na() |> filter(location %in% loc) |> filter(date > dates[1] & date < dates[2])# |> select(col)
+    # di recente hanno aggiunto due colonne che ad es. per l'Italia contengono sempre na, quindi o le rimosso o il drop_na restituirà dataframes vuoti
+    # tmp <- data |> select(-c('total_boosters', 'total_boosters_per_hundred')) |> drop_na() |> filter(location %in% loc) |> filter(date > dates[1] & date < dates[2])# |> select(col)
+
+    # l'implementazione originale funziona MA rimuove le due colonne nuove dal dataframe usato per il grafico - ma i loro nomi rimangono nel menu dropdown della scheda con i plot, ergo 
+    # o li levo da quel menu o faccio un dropna più smart con dplyr::filter + is.na anziché con tidyr::drop_na che butta e basta
+    nomi_ok <- names(data)[-c(which(names(data) == 'total_boosters'), which(names(data) == 'total_boosters_per_hundred'))] # soluzione un po' brutta ma dovrei riprendermi meglio dplyr
+    # tmp <- data %>% filter(!is.na(quote(nomi_ok))) |> filter(location %in% loc) |> filter(date > dates[1] & date < dates[2]) # warning e non funziona
+    tmp <- data[,nomi_ok] |> filter(location %in% loc) |> filter(date > dates[1] & date < dates[2]) # con la notazione matriciale posso usare le stringhe direttamente senza problemi
+    # così funziona ma ovviamente se ci sono solo NA fallisce e dà errore. Lascio comunque questa alternativa anche solo per fini pedagogici
+
     g <- ggplot(tmp, aes_string(x = 'date', y = col, color = 'location')) + geom_line() + geom_point() + xlab('date') + ylab(str_replace(col, '_', ' '))
-    g # di recente hanno aggiunto due colonne che ad es. per l'Italia contengono sempre na, quindi o le rimosso o il drop_na restituirà dataframes vuoti
+    g 
 }
 
 plot_world_map <- function(world_data) {
